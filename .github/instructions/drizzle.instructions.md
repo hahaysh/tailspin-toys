@@ -63,6 +63,16 @@ Seed-derived values must be reproducible across builds. Derive star ratings from
 
 Unit-test transforms directly and helpers against `createTestDatabase()`. See [`unit-tests.instructions.md`](unit-tests.instructions.md).
 
+## TSDoc Requirements
+
+Every exported function in `db/` and `src/lib/` must have a TSDoc block with:
+
+- A purpose statement (first line)
+- `@param` for each parameter, including the injectable `db` argument
+- `@returns` describing the return value and the null/empty case
+
+See [`coding-standards.instructions.md`](coding-standards.instructions.md) for the full comment philosophy and TSDoc format with examples.
+
 ## Type checking
 
 The data layer (`db/**/*.ts`, `src/lib/*.ts`) is type-checked by `npm run typecheck`, which runs the native **TypeScript 7** compiler (`tsgo`, from `@typescript/native-preview`) against `tsconfig.tsgo.json`. Keep helpers exported with explicit parameter and return types so `tsgo` can verify them. Linting is unaffected — ESLint + `typescript-eslint` still run on the classic `typescript` package.

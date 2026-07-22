@@ -4,6 +4,7 @@
  * in isolation and reused by the seed script.
  */
 
+/** Typed shape of a single row from the games seed CSV. */
 export interface GameCsvRow {
     title: string;
     category: string;
@@ -16,6 +17,9 @@ const CROWDFUNDING_BLURB = ' Support this game through our crowdfunding platform
 /**
  * Minimal RFC-4180-style CSV parser supporting quoted fields, escaped quotes
  * (""), and newlines inside quoted values. Returns rows keyed by header name.
+ *
+ * @param content - Raw CSV string (UTF-8, LF or CRLF line endings)
+ * @returns Array of objects mapping header names to field values; empty array for empty input
  */
 export function parseCsv(content: string): Record<string, string>[] {
     const records: string[][] = [];
@@ -83,7 +87,14 @@ export function parseCsv(content: string): Record<string, string>[] {
     });
 }
 
-/** Parse the games seed CSV into typed rows. */
+/**
+ * Parse the games seed CSV into typed rows.
+ *
+ * Filters out blank rows and trims whitespace from all fields.
+ *
+ * @param content - Raw CSV file contents
+ * @returns Typed game rows; empty array when the CSV contains no data rows
+ */
 export function parseGamesCsv(content: string): GameCsvRow[] {
     return parseCsv(content)
         .filter((row) => (row.Title ?? '').trim().length > 0)
@@ -95,24 +106,52 @@ export function parseGamesCsv(content: string): GameCsvRow[] {
         }));
 }
 
+/**
+ * Builds a human-readable description for a game category.
+ *
+ * @param name - The category name (e.g. "Strategy")
+ * @returns A short description string for the category
+ */
 export function categoryDescription(name: string): string {
     return `Collection of ${name} games available for crowdfunding`;
 }
 
+/**
+ * Builds a human-readable description for a game publisher.
+ *
+ * @param name - The publisher name
+ * @returns A short description string for the publisher
+ */
 export function publisherDescription(name: string): string {
     return `${name} is a game publisher seeking funding for exciting new titles`;
 }
 
+/**
+ * Appends the crowdfunding call-to-action blurb to a raw game description.
+ *
+ * @param rawDescription - The original description text from the seed CSV
+ * @returns The description with the platform blurb appended
+ */
 export function gameDescription(rawDescription: string): string {
     return rawDescription + CROWDFUNDING_BLURB;
 }
 
-/** Distinct category names in first-seen order. */
+/**
+ * Distinct category names from the CSV rows, in first-seen order.
+ *
+ * @param rows - Parsed game CSV rows
+ * @returns Unique category name strings preserving insertion order
+ */
 export function uniqueCategories(rows: GameCsvRow[]): string[] {
     return [...new Set(rows.map((row) => row.category))];
 }
 
-/** Distinct publisher names in first-seen order. */
+/**
+ * Distinct publisher names from the CSV rows, in first-seen order.
+ *
+ * @param rows - Parsed game CSV rows
+ * @returns Unique publisher name strings preserving insertion order
+ */
 export function uniquePublishers(rows: GameCsvRow[]): string[] {
     return [...new Set(rows.map((row) => row.publisher))];
 }
@@ -121,6 +160,9 @@ export function uniquePublishers(rows: GameCsvRow[]): string[] {
  * Deterministically derive a star rating in [3.0, 5.0] (one decimal place)
  * from the game title. Using a stable hash instead of Math.random keeps
  * static builds reproducible.
+ *
+ * @param title - The game title to hash
+ * @returns A rating in the range 3.0–5.0 (inclusive), rounded to one decimal place
  */
 export function ratingFromTitle(title: string): number {
     let hash = 0;

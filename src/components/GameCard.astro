@@ -3,7 +3,12 @@ import type { Game } from '../types/game';
 import Tag from './Tag.astro';
 import ArrowRight from '../assets/icons/arrow-right.svg';
 
+/**
+ * Renders a game summary card that links to the game detail page.
+ * Displays the title, category and publisher tags, and a truncated description.
+ */
 interface Props {
+    /** The game to display. Should include category and publisher relations. */
     game: Game;
 }
 

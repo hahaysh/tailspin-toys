@@ -63,6 +63,17 @@ npm run test:unit   # Vitest unit tests (transforms + data-access helpers)
 npm run test:e2e    # Playwright E2E tests (builds + previews the static site first)
 ```
 
+## Coding Standards
+
+The project follows a documented set of coding conventions to keep contributions consistent. Key highlights:
+
+- **Comment intent, not mechanics.** Comments explain *why* code exists or the reasoning behind a non-obvious decision — never restate *what* the code already says.
+- **TSDoc on exported functions.** Every exported function in `db/` and `src/lib/` carries a TSDoc block with `@param` and `@returns` tags.
+- **Document component contracts.** Each reusable `.astro` component documents its `Props` interface so the API is self-explanatory.
+- **Explicit TypeScript types at module boundaries.** All exported functions must declare explicit parameter and return types (enforced by ESLint).
+
+Full details are in [`.github/instructions/coding-standards.instructions.md`](.github/instructions/coding-standards.instructions.md).
+
 ## Linting
 
 The frontend uses ESLint to enforce code quality across TypeScript and Astro files. Run it with:

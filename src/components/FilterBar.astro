@@ -1,0 +1,92 @@
+---
+import type { Category, Publisher } from '../types/game';
+
+/**
+ * Renders filter controls for the game listing page.
+ * Emits no client-side JavaScript itself — the parent page provides
+ * the filtering script that reads from these controls.
+ */
+interface Props {
+    /** All available categories, used to render the category checkboxes. */
+    categories: Category[];
+    /** All available publishers, used to render the publisher select options. */
+    publishers: Publisher[];
+}
+
+const { categories, publishers } = Astro.props;
+---
+
+<div
+    class="bg-slate-800/60 backdrop-blur-sm rounded-xl border border-slate-700/50 p-5 mb-8"
+    data-testid="filter-bar"
+    aria-label="Filter games"
+>
+    <div class="flex flex-wrap gap-6 items-start">
+        {/* Category multi-select: one checkbox per category */}
+        <fieldset class="min-w-0">
+            <legend class="text-sm font-semibold text-slate-300 mb-3 uppercase tracking-wide">
+                Category
+            </legend>
+            <div class="flex flex-wrap gap-2" data-testid="filter-category-list">
+                {categories.map((cat) => (
+                    <label
+                        class="flex items-center gap-2 cursor-pointer group"
+                        data-testid={`filter-category-label-${cat.id}`}
+                    >
+                        <input
+                            type="checkbox"
+                            class="w-4 h-4 rounded border-slate-600 bg-slate-700 text-blue-500 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-slate-800 focus:outline-none cursor-pointer"
+                            value={cat.id}
+                            data-testid={`filter-category-${cat.id}`}
+                            aria-label={`Filter by category: ${cat.name}`}
+                        />
+                        <span class="text-sm text-slate-300 group-hover:text-slate-100 transition-colors">
+                            {cat.name}
+                        </span>
+                    </label>
+                ))}
+            </div>
+        </fieldset>
+
+        {/* Publisher single-select dropdown */}
+        <div class="min-w-40">
+            <label
+                for="filter-publisher-select"
+                class="block text-sm font-semibold text-slate-300 mb-3 uppercase tracking-wide"
+            >
+                Publisher
+            </label>
+            <select
+                id="filter-publisher-select"
+                class="w-full bg-slate-700 border border-slate-600 text-slate-100 text-sm rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none cursor-pointer"
+                data-testid="filter-publisher"
+                aria-label="Filter by publisher"
+            >
+                <option value="">All Publishers</option>
+                {publishers.map((pub) => (
+                    <option value={pub.id}>{pub.name}</option>
+                ))}
+            </select>
+        </div>
+
+        {/* Clear filters button */}
+        <div class="flex items-end">
+            <button
+                type="button"
+                class="mt-auto text-sm text-slate-400 hover:text-slate-100 border border-slate-600 hover:border-slate-400 rounded-lg px-4 py-2 transition-colors focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                data-testid="filter-clear"
+                aria-label="Clear all filters"
+            >
+                Clear filters
+            </button>
+        </div>
+    </div>
+
+    {/* Live region announces the visible game count after each filter change */}
+    <p
+        class="sr-only"
+        role="status"
+        aria-live="polite"
+        data-testid="filter-status"
+    ></p>
+</div>

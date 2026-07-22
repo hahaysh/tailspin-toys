@@ -39,5 +39,10 @@ export default [
     languageOptions: {
       parser: tseslint.parser,
     },
+    rules: {
+      // Require explicit return types and parameter types on exported functions
+      // so the data layer contract is always visible at the boundary.
+      "@typescript-eslint/explicit-module-boundary-types": "error",
+    },
   },
 ];

@@ -50,19 +50,40 @@ function baseGamesQuery(db: Database) {
         .leftJoin(publishers, eq(games.publisherId, publishers.id));
 }
 
-/** All games ordered by title. */
+/**
+ * Retrieves all games ordered alphabetically by title.
+ *
+ * Ordering is stable so static builds produce deterministic output.
+ *
+ * @param db - Drizzle database client (injectable for testing)
+ * @returns Array of fully-typed Game objects; empty array when no games exist
+ */
 export async function getAllGames(db: Database): Promise<Game[]> {
     const rows = await baseGamesQuery(db).orderBy(asc(games.title));
     return rows.map(mapGame);
 }
 
-/** All game ids ordered by title. */
+/**
+ * Retrieves all game ids ordered alphabetically by title.
+ *
+ * Used by `getStaticPaths` to enumerate pages at build time without loading
+ * full game objects.
+ *
+ * @param db - Drizzle database client (injectable for testing)
+ * @returns Array of numeric game ids in title-alphabetical order
+ */
 export async function getAllGameIds(db: Database): Promise<number[]> {
     const rows = await db.select({ id: games.id }).from(games).orderBy(asc(games.title));
     return rows.map((row) => row.id);
 }
 
-/** A single game by id, or null when it does not exist. */
+/**
+ * Returns a single game by its numeric id, or null when not found.
+ *
+ * @param db - Drizzle database client (injectable for testing)
+ * @param id - Primary key of the game to retrieve
+ * @returns The matching Game with its category and publisher, or null if no row with that id exists
+ */
 export async function getGameById(db: Database, id: number): Promise<Game | null> {
     const rows = await baseGamesQuery(db).where(eq(games.id, id)).limit(1);
     return rows.length > 0 ? mapGame(rows[0]) : null;

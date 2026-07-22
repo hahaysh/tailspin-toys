@@ -3,12 +3,18 @@ import Layout from '../layouts/Layout.astro';
 import GameCard from '../components/GameCard.astro';
 import PageHero from '../components/PageHero.astro';
 import EmptyState from '../components/EmptyState.astro';
+import FilterBar from '../components/FilterBar.astro';
 import { getDatabase } from '../lib/db';
-import { getAllGames } from '../lib/games';
+import { getAllGames, getAllCategories, getAllPublishers } from '../lib/games';
 
 export const prerender = true;
 
-const games = await getAllGames(getDatabase());
+const db = getDatabase();
+const [games, filterCategories, filterPublishers] = await Promise.all([
+    getAllGames(db),
+    getAllCategories(db),
+    getAllPublishers(db),
+]);
 ---
 
 <Layout title="Tailspin Toys - Crowdfunding your new favorite game!">
@@ -24,10 +30,106 @@ const games = await getAllGames(getDatabase());
       {games.length === 0 ? (
         <EmptyState text="No games available at the moment." />
       ) : (
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6" data-testid="games-grid">
-          {games.map((game) => <GameCard game={game} />)}
-        </div>
+        <>
+          <FilterBar categories={filterCategories} publishers={filterPublishers} />
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6" data-testid="games-grid">
+            {games.map((game) => <GameCard game={game} />)}
+          </div>
+
+          {/* Shown by the filter script when all cards are hidden */}
+          <div
+            class="hidden"
+            data-testid="filter-no-results"
+            aria-live="polite"
+          >
+            <EmptyState text="No games match the selected filters." />
+          </div>
+        </>
       )}
     </div>
   </div>
 </Layout>
+
+<script>
+    // Client-side filtering: reads the FilterBar controls and toggles the
+    // `hidden` class on game cards. No framework needed — all game data is
+    // already in the DOM from the static build.
+
+    const filterBar = document.querySelector('[data-testid="filter-bar"]');
+    const gamesGrid = document.querySelector('[data-testid="games-grid"]');
+    const noResults = document.querySelector('[data-testid="filter-no-results"]');
+    const statusEl = document.querySelector('[data-testid="filter-status"]');
+
+    if (!filterBar || !gamesGrid) {
+        // Bail out if the filtering UI is not present (e.g. empty catalog).
+        console.warn('FilterBar or games grid not found — filtering disabled.');
+    } else {
+        function applyFilters(): void {
+            const categoryCheckboxes = filterBar!.querySelectorAll<HTMLInputElement>(
+                'input[type="checkbox"]:checked'
+            );
+            const selectedCategoryIds = Array.from(categoryCheckboxes).map((el) => el.value);
+
+            const publisherSelect = filterBar!.querySelector<HTMLSelectElement>(
+                '[data-testid="filter-publisher"]'
+            );
+            const selectedPublisherId = publisherSelect?.value ?? '';
+
+            const cards = gamesGrid!.querySelectorAll<HTMLElement>('[data-testid="game-card"]');
+            let visibleCount = 0;
+
+            cards.forEach((card) => {
+                const cardCategoryId = card.dataset.categoryId ?? '';
+                const cardPublisherId = card.dataset.publisherId ?? '';
+
+                const matchesCategory =
+                    selectedCategoryIds.length === 0 ||
+                    selectedCategoryIds.includes(cardCategoryId);
+                const matchesPublisher =
+                    selectedPublisherId === '' || cardPublisherId === selectedPublisherId;
+
+                const isVisible = matchesCategory && matchesPublisher;
+                card.classList.toggle('hidden', !isVisible);
+                if (isVisible) visibleCount++;
+            });
+
+            // Show the "no results" message when all cards are filtered out.
+            noResults?.classList.toggle('hidden', visibleCount > 0);
+            gamesGrid!.classList.toggle('hidden', visibleCount === 0);
+
+            // Announce the result count to screen readers.
+            if (statusEl) {
+                const total = cards.length;
+                statusEl.textContent =
+                    visibleCount === total
+                        ? `Showing all ${total} games`
+                        : `${visibleCount} of ${total} games visible`;
+            }
+        }
+
+        // Category checkboxes
+        filterBar.addEventListener('change', (e) => {
+            if ((e.target as HTMLElement).matches('input[type="checkbox"]')) {
+                applyFilters();
+            }
+        });
+
+        // Publisher select
+        filterBar.querySelector('[data-testid="filter-publisher"]')?.addEventListener('change', () => {
+            applyFilters();
+        });
+
+        // Clear button: reset all controls then reapply
+        filterBar.querySelector('[data-testid="filter-clear"]')?.addEventListener('click', () => {
+            filterBar!.querySelectorAll<HTMLInputElement>('input[type="checkbox"]').forEach((cb) => {
+                cb.checked = false;
+            });
+            const publisherSelect = filterBar!.querySelector<HTMLSelectElement>(
+                '[data-testid="filter-publisher"]'
+            );
+            if (publisherSelect) publisherSelect.value = '';
+            applyFilters();
+        });
+    }
+</script>
